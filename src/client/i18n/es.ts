@@ -105,6 +105,46 @@ export const es = {
     },
   },
 
+  /**
+   * Publicador de Vídeos IA: etiquetas, acciones, estados y errores propios de
+   * la funcionalidad de publicación (Requisitos 9.1, 9.2). Sección aditiva que
+   * no altera las claves existentes del CRM.
+   */
+  publisher: {
+    pageTitle: 'Publicaciones',
+    newPost: 'Nueva publicación',
+    empty: 'Aún no hay publicaciones. Crea la primera.',
+    loading: 'Cargando publicaciones…',
+    // Etiquetas de campos del formulario de creación de publicación.
+    fields: {
+      videoUrl: 'URL del vídeo',
+      fileRef: 'Referencia de archivo',
+      brief: 'Resumen del tema',
+      platforms: 'Plataformas',
+    },
+    // Botones de acción sobre publicaciones y contenidos por plataforma.
+    actions: {
+      create: 'Crear publicación',
+      generate: 'Generar',
+      regenerate: 'Regenerar',
+      publish: 'Publicar',
+      copy: 'Copiar texto',
+      copied: 'Texto copiado',
+    },
+    // Etiquetas de estado de publicación por plataforma (Requisito 9.2).
+    status: {
+      pendiente: 'Pendiente',
+      enviado: 'Enviado',
+      error: 'Error',
+      manual: 'Manual',
+    },
+    // Mensajes de validación específicos del publicador.
+    errors: {
+      videoUrlRequired: 'La URL del vídeo es obligatoria',
+      platformRequired: 'Selecciona al menos una plataforma',
+    },
+  },
+
   /** Mensajes de error mostrados al usuario, todos en español (Requisito 12.2). */
   errors: {
     // Validación de mensaje vacío en el asistente (Requisito 5.5).

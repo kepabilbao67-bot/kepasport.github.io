@@ -1,0 +1,37 @@
+{
+  "pbtResults": {
+    "1.3 Escribir prueba de propiedad para la adaptación del prompt y la validación": {
+      "status": "passed",
+      "lastRunTimestamp": 1781980469194
+    },
+    "2.3 Escribir prueba de propiedad para la guarda de clave de API": {
+      "status": "passed",
+      "lastRunTimestamp": 1781980472592
+    },
+    "3.3 Escribir prueba de propiedad para fan-out y resiliencia": {
+      "status": "passed",
+      "lastRunTimestamp": 1781980481909
+    },
+    "2.2 Escribir prueba de propiedad para `parseContenido` (round-trip / forma estable)": {
+      "status": "passed",
+      "lastRunTimestamp": 1781980494659
+    },
+    "3.2 Escribir prueba de propiedad para deduplicación de destinos": {
+      "status": "passed",
+      "lastRunTimestamp": 1781980495139
+    },
+    "5.2 Escribir prueba de propiedad para aislamiento por propietario y orden": {
+      "status": "passed",
+      "lastRunTimestamp": 1781980792210
+    },
+    "6.4 Escribir prueba de propiedad para regeneración y conservación ante error": {
+      "status": "passed",
+      "lastRunTimestamp": 1781980817442
+    },
+    "9.2 Escribir prueba por ejemplo para etiquetas de estado en español": {
+      "status": "passed",
+      "lastRunTimestamp": 1781981164472
+    }
+  },
+  "executionHistory": {}
+}
