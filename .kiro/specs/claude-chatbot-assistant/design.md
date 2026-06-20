@@ -2,13 +2,13 @@
 
 ## Visión General
 
-Este documento describe el diseño técnico de un **CRM de clientes** construido sobre **Wasp** (framework full-stack que genera frontend React y backend Node.js, con persistencia mediante **Prisma**), escrito en **TypeScript**. El producto permite a agentes autenticados gestionar clientes y su actividad, conversar con un **asistente de IA basado en el modelo Claude de Anthropic** (con respuestas transmitidas token a token vía SSE), y se integra con **Zapier** mediante un webhook de salida y un endpoint de entrada autenticado.
+Este documento describe el diseño técnico de un **CRM de clientes** construido sobre **Wasp** (framework full-stack que genera frontend React y backend Node.js, con persistencia mediante **Prisma**), escrito en **TypeScript**. El producto permite a agentes autenticados gestionar clientes y su actividad, conversar con un **asistente de IA basado en el modelo Claude de Anthropic** (con respuestas transmitidas token a token vía SSE), notifica los cambios de Cliente a una **lista configurable de destinos de salida** (Zapier, Make, n8n o un endpoint HTTP propio) mediante una **capa de automatización de salida genérica**, y se integra con **Zapier** mediante un endpoint de entrada autenticado. Además, la base de datos se inicializa con una **semilla idempotente** que crea un cliente de demostración.
 
 El diseño persigue tres objetivos transversales:
 
 1. **Aislamiento por propietario (multi-agente):** cada registro (Cliente, Actividad, Conversación, Mensaje) pertenece a un Agente y solo es visible para él.
-2. **Separación de responsabilidades:** la lógica de integración con Claude y con Zapier se aísla en capas dedicadas (`Proveedor_Claude`, `Capa_Zapier`) desacopladas de las operaciones de Wasp y de la UI.
-3. **Configuración externalizada:** secretos y parámetros (clave de API, modelo, URL de webhook, token de integración) viven en `.env`, excluido del control de versiones.
+2. **Separación de responsabilidades:** la lógica de integración con Claude y con los sistemas externos de automatización se aísla en capas dedicadas (`Proveedor_Claude`, `Capa_Salida` genérica) desacopladas de las operaciones de Wasp y de la UI.
+3. **Configuración externalizada:** secretos y parámetros (clave de API, modelo, lista de URLs de webhook de salida, token de integración) viven en `.env`, excluido del control de versiones.
 
 Toda la interfaz y los mensajes de error se presentan **en español**.
 
@@ -25,9 +25,10 @@ Toda la interfaz y los mensajes de error se presentan **en español**.
 | 7. Persistencia de conversaciones | entidades `Conversation`/`Message`, queries asociadas |
 | 8. Configuración del modelo | `Gestor_Configuracion`, `Proveedor_Claude` |
 | 9. Manejo de errores del modelo | `Proveedor_Claude`, endpoint SSE, `Interfaz_Chat` |
-| 10. Webhook de salida a Zapier | `Capa_Zapier.notificarCliente`, hooks en actions de Cliente |
+| 10. Automatización de salida multi-destino | `Capa_Salida.notificarClienteEvento`/`resolverDestinos`, hooks en actions de Cliente |
 | 11. Endpoint de entrada de Zapier | endpoint `api` `zapierInbound` |
 | 12. UI en español | componentes React, catálogo de textos |
+| 13. Semilla inicial de la base de datos | `seeds.seedKepaBilbao`, `app.db.seeds` en `main.wasp` |
 
 ## Arquitectura
 
@@ -50,7 +51,7 @@ Toda la interfaz y los mensajes de error se presentan **en español**.
 |  - deleteClient        +------------------------------+     |
 |  - searchClients       |  Capas de integración        |     |
 |  - addActivity         |  - Proveedor_Claude          |     |
-|  - getConversations    |  - Capa_Zapier               |     |
+|  - getConversations    |  - Capa_Salida (multi-dest.) |     |
 |  - getMessages         |  - Constructor_Contexto      |     |
 |                        |  - Gestor_Configuracion      |     |
 |                        +------------------------------+     |
@@ -59,9 +60,9 @@ Toda la interfaz y los mensajes de error se presentan **en español**.
         v                                 v
 +--------------------------+   +-----------------------------+
 |  Base de datos (Prisma)  |   |  API de Anthropic (Claude)  |
-|  User Client Activity    |   |  Zapier (webhook salida)    |
-|  Conversation Message    |   +-----------------------------+
-+--------------------------+
+|  User Client Activity    |   |  Destinos de salida:        |
+|  Conversation Message    |   |  Zapier / Make / n8n / HTTP |
++--------------------------+   +-----------------------------+
 ```
 
 ### Flujo de una solicitud de chat con streaming
@@ -72,11 +73,17 @@ Toda la interfaz y los mensajes de error se presentan **en español**.
 4. `Proveedor_Claude` invoca la API de Anthropic en modo stream; cada token recibido se reenvía como evento SSE a la UI.
 5. Al completarse, el backend persiste el `Message` del asistente. Ante error, finaliza el stream y emite un evento de error.
 
-### Flujo de creación de cliente con webhook
+### Flujo de creación de cliente con notificación de salida
 
 1. `createClient` valida y persiste el Cliente.
-2. Tras la persistencia, invoca `Capa_Zapier.notificarCliente(cliente)`.
-3. Si `ZAPIER_WEBHOOK_URL` no está configurada, se omite el envío. Si está, se hace POST; un fallo se registra pero no revierte la operación.
+2. Tras la persistencia, invoca `Capa_Salida.notificarClienteEvento(cliente, 'created')` (y `'updated'` en `updateClient`).
+3. `resolverDestinos()` construye la lista deduplicada de destinos combinando `OUTBOUND_WEBHOOK_URLS` y el `ZAPIER_WEBHOOK_URL` heredado. Si la lista está vacía, se omite el envío. Si tiene destinos, se hace POST a todos en paralelo; el fallo de cualquiera se registra pero no revierte la operación ni bloquea a los demás.
+
+### Flujo de inicialización con semilla
+
+1. Al ejecutar la semilla de Wasp (`app.db.seeds`), se invoca `seedKepaBilbao(prisma)`.
+2. Se garantiza la existencia de un Usuario propietario (se reutiliza el primero o se crea uno mínimo).
+3. Si ya existe un Cliente con el correo de demostración, se omite la creación (idempotencia); en caso contrario, se crea el Cliente_Demo "Kepa Bilbao".
 
 ## Componentes e Interfaces
 
@@ -91,6 +98,10 @@ app clientCrm {
     userEntity: User,
     methods: { usernameAndPassword: {} },
     onAuthFailedRedirectTo: "/login"
+  },
+  db: {
+    // Semilla idempotente que crea el Cliente_Demo "Kepa Bilbao" (Requisito 13)
+    seeds: [ import { seedKepaBilbao } from "@server/seeds.js" ]
   }
 }
 
@@ -185,7 +196,7 @@ export const createClient = async (input: ClientInput, context) => {
   const client = await context.entities.Client.create({
     data: { ...input, ownerId, lastActivityAt: new Date() }
   })
-  await notificarCliente(client, 'created') // Capa_Zapier (no bloquea ante fallo)
+  await notificarClienteEvento(client, 'created') // Capa_Salida (no bloquea ante fallo)
   return client
 }
 
@@ -207,7 +218,7 @@ export const searchClients = async ({ term }: { term: string }, context) => {
 }
 ```
 
-`updateClient` aplica `requireOwnership`, valida, actualiza `lastActivityAt` y notifica a Zapier. `deleteClient` elimina el Cliente y, en una transacción, sus `Activity` asociadas (Requisito 2.5). `addActivity` valida contenido no vacío y actualiza `lastActivityAt` del Cliente (Requisitos 4.1, 4.3).
+`updateClient` aplica `requireOwnership`, valida, actualiza `lastActivityAt` y notifica a los destinos de salida mediante `notificarClienteEvento(client, 'updated')`. `deleteClient` elimina el Cliente y, en una transacción, sus `Activity` asociadas (Requisito 2.5). `addActivity` valida contenido no vacío y actualiza `lastActivityAt` del Cliente (Requisitos 4.1, 4.3).
 
 ### Gestor de Configuración (`server/config.ts`)
 
@@ -215,8 +226,18 @@ export const searchClients = async ({ term }: { term: string }, context) => {
 export const config = {
   anthropicApiKey: () => process.env.ANTHROPIC_API_KEY,
   claudeModel:     () => process.env.CLAUDE_MODEL ?? 'claude-3-5-sonnet', // Requisitos 8.1, 8.2
-  zapierWebhookUrl:() => process.env.ZAPIER_WEBHOOK_URL,                  // Requisito 10.2
-  zapierToken:     () => process.env.ZAPIER_INBOUND_TOKEN                 // Requisito 11.4
+  zapierWebhookUrl:() => process.env.ZAPIER_WEBHOOK_URL,                  // Requisito 10.2 (heredado)
+  zapierToken:     () => process.env.ZAPIER_INBOUND_TOKEN,               // Requisito 11.4
+
+  // Lista de destinos de salida genéricos (Make, n8n, HTTP propio, etc.).
+  // Acepta URLs separadas por comas y/o espacios; descarta entradas vacías.
+  // No deduplica: la combinación con `zapierWebhookUrl()` y la deduplicación
+  // se realizan en la Capa_Salida (`resolverDestinos`). (Requisito 10.2)
+  outboundWebhookUrls: (): string[] => {
+    const raw = process.env.OUTBOUND_WEBHOOK_URLS
+    if (!raw) return []
+    return raw.split(/[\s,]+/).map(u => u.trim()).filter(u => u.length > 0)
+  }
 }
 ```
 
@@ -321,25 +342,49 @@ export const chatStream = async (req, res, context) => {
 }
 ```
 
-### Capa_Zapier — salida (`server/integrations/zapierOutbound.ts`)
+### Capa_Salida — automatización de salida genérica (`server/integrations/outbound.ts`)
+
+Capa de automatización de salida **multi-destino**. Generaliza la notificación para funcionar con cualquier sistema externo (Zapier, Make, n8n, un endpoint HTTP propio, etc.). `resolverDestinos()` construye la lista deduplicada de URLs combinando `config.outboundWebhookUrls()` (de `OUTBOUND_WEBHOOK_URLS`) con el `config.zapierWebhookUrl()` heredado. `notificarClienteEvento()` difunde (fan-out) el mismo cuerpo a todos los destinos en paralelo, aislando los fallos por destino y sin propagar nunca la excepción.
 
 ```typescript
-export async function notificarCliente(client: Client, event: 'created' | 'updated'): Promise<void> {
-  const url = config.zapierWebhookUrl()
-  if (!url) return // Req 10.3: omitir si no está configurado
+export type OutboundEvent = 'created' | 'updated'
+
+// Combina la lista genérica + el Zapier heredado y deduplica preservando orden.
+export function resolverDestinos(): string[] {
+  const destinos = [...config.outboundWebhookUrls()]
+  const zapier = config.zapierWebhookUrl()?.trim()
+  if (zapier && zapier.length > 0) destinos.push(zapier) // compatibilidad hacia atrás
+  return [...new Set(destinos)]
+}
+
+export async function notificarClienteEvento(client: Client, event: OutboundEvent): Promise<void> {
+  const destinos = resolverDestinos()
+  if (destinos.length === 0) return // Req 10.3: omitir si no hay destinos
+  const body = JSON.stringify({ event, client: serializeClient(client) }) // Req 10.1
+  // Cada destino se envía aislado; un fallo se captura y registra (Req 10.4).
+  await Promise.all(destinos.map(url => enviarA(url, body)))
+}
+
+async function enviarA(url: string, body: string): Promise<void> {
   try {
-    await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event, client: serializeClient(client) })
-    }) // Req 10.1
+    await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
   } catch (err) {
-    console.error('Fallo al notificar a Zapier:', err) // Req 10.4: registrar y continuar
+    console.error(`Fallo al notificar al destino de salida (${url}):`, err) // Req 10.4
   }
 }
 ```
 
-El llamador nunca propaga la excepción: la operación de Cliente se completa con independencia del resultado del webhook.
+El llamador nunca propaga la excepción: la operación de Cliente se completa con independencia del resultado de los webhooks.
+
+### Capa_Zapier — fachada de compatibilidad (`server/integrations/zapierOutbound.ts`)
+
+Se conserva `notificarCliente` como **fachada compatible hacia atrás** que delega en `notificarClienteEvento`. Su comportamiento es idéntico cuando solo `ZAPIER_WEBHOOK_URL` está configurado, de modo que las configuraciones anteriores siguen funcionando sin cambios.
+
+```typescript
+export async function notificarCliente(client: Client, event: OutboundEvent): Promise<void> {
+  await notificarClienteEvento(client, event) // delega en la Capa_Salida genérica
+}
+```
 
 ### Endpoint de entrada de Zapier (`server/integrations/zapierInbound.ts`)
 
@@ -359,6 +404,36 @@ export const zapierInbound = async (req, res, context) => {
   res.status(201).json(serializeClient(client))
 }
 ```
+
+### Semilla de la base de datos (`server/seeds.ts`)
+
+Inicializa la base de datos con un Cliente_Demo de arranque. Se cablea en `main.wasp` bajo `app.db.seeds` con la firma de semilla de Wasp 0.13 `(prismaClient) => Promise<void>`. La semilla es **idempotente**: identifica el Cliente_Demo por un correo de marcador y omite la creación si ya existe, de modo que ejecutarla varias veces no genera duplicados (Requisitos 13.1, 13.2).
+
+```typescript
+const KEPA_EMAIL = 'kepa.bilbao@example.com'
+
+export const seedKepaBilbao = async (prisma: PrismaClient): Promise<void> => {
+  // 1. Garantizar un Usuario propietario: reutilizar el primero o crear uno mínimo.
+  let owner = await prisma.user.findFirst()
+  if (!owner) owner = await prisma.user.create({ data: {} })
+
+  // 2. Idempotencia: no duplicar si el Cliente_Demo ya existe (Req 13.2).
+  const existente = await prisma.client.findFirst({ where: { email: KEPA_EMAIL } })
+  if (existente) return
+
+  // 3. Crear el Cliente_Demo "Kepa Bilbao" asociado al propietario (Req 13.1).
+  await prisma.client.create({
+    data: {
+      name: 'Kepa Bilbao', email: KEPA_EMAIL, phone: '+34 600 000 000',
+      company: 'Bilbao Consulting', status: 'activo',
+      notes: 'Cliente inicial creado por la semilla de la base de datos.',
+      ownerId: owner.id, lastActivityAt: new Date()
+    }
+  })
+}
+```
+
+Wasp gestiona las identidades de autenticación (usuario/contraseña) en sus propias entidades Auth/AuthIdentity; por ello la semilla solo crea una fila mínima de `User` que actúe como propietario del Cliente cuando no existe ninguno.
 
 ### Componentes React (frontend, en español)
 
@@ -441,7 +516,8 @@ La eliminación en cascada (`onDelete: Cascade`) garantiza la integridad referen
 |----------|-----------|-------------------|------------|
 | `ANTHROPIC_API_KEY` | Clave de API de Anthropic | (ninguno; error si falta) | 8.3, 8.5 |
 | `CLAUDE_MODEL` | Identificador del modelo | `claude-3-5-sonnet` | 8.1, 8.2 |
-| `ZAPIER_WEBHOOK_URL` | URL del webhook de salida | (ninguno; se omite) | 10.2, 10.3 |
+| `OUTBOUND_WEBHOOK_URLS` | Lista de destinos de salida (Zapier, Make, n8n, HTTP propio), separados por comas o espacios | (ninguno; lista vacía) | 10.1, 10.2 |
+| `ZAPIER_WEBHOOK_URL` | URL de webhook de salida heredada; se conserva por **compatibilidad hacia atrás** y se combina con `OUTBOUND_WEBHOOK_URLS` | (ninguno; se omite) | 10.2, 10.3 |
 | `ZAPIER_INBOUND_TOKEN` | Token del endpoint de entrada | (ninguno; rechaza todo) | 11.4 |
 
 - Las variables se leen en tiempo de ejecución desde `.env` mediante `Gestor_Configuracion`.
@@ -458,7 +534,7 @@ La eliminación en cascada (`onDelete: Cascade`) garantiza la integridad referen
 | Falta clave de API | `Proveedor_Claude` | `HttpError 500` (no invoca modelo) | Mensaje de error en español | 8.5 |
 | Error de la API de Claude | `try/catch` en stream | evento SSE `error`; conserva mensaje del usuario | Mensaje de error en español | 9.1, 9.3 |
 | Interrupción del stream | `catch`/`finally` | finaliza stream, evento `error` | Indicación de interrupción | 9.2 |
-| Fallo del webhook de salida | `try/catch` en `notificarCliente` | log; operación de Cliente continúa | (sin impacto en la operación) | 10.4 |
+| Fallo de un destino de salida | `try/catch` por destino en `notificarClienteEvento` | log; los demás destinos se intentan; operación de Cliente continúa | (sin impacto en la operación) | 10.4 |
 | Token de Zapier inválido | comparación de token | `401` | n/a (integración) | 11.2 |
 | Falta nombre/email en entrada Zapier | validación | `400` | n/a (integración) | 11.3 |
 
@@ -473,11 +549,12 @@ Se adopta un **enfoque dual**: pruebas basadas en ejemplos (casos concretos, int
 - **Auth de rutas (1.1):** una ruta protegida sin sesión redirige a login.
 - **Sin resultados (3.2):** búsqueda sin coincidencias muestra el mensaje en español.
 - **Modelo por defecto (8.2):** sin `CLAUDE_MODEL`, el proveedor usa `claude-3-5-sonnet`.
-- **Smoke de configuración (8.3, 8.4, 10.2, 11.4):** la clave/URL/token se leen de `.env`; `.gitignore` excluye `.env`.
+- **Smoke de configuración (8.3, 8.4, 10.2, 11.4):** la clave/URLs/token se leen de `.env`; `.gitignore` excluye `.env`.
 - **Interrupción de stream (9.2) y error en UI (9.3):** ante un proveedor que falla, la UI muestra texto en español.
+- **Semilla idempotente (13.1):** ejecutar la semilla sobre una base de datos vacía crea un único Cliente_Demo "Kepa Bilbao" con propietario (el caso multi-ejecución se cubre como propiedad).
 - **Idioma de la UI (12.1, 12.2):** los componentes renderizan etiquetas y mensajes en español.
 
-Las pruebas que tocan Anthropic y Zapier usan **mocks** de `Proveedor_Claude` y de `fetch` para evitar llamadas reales.
+Las pruebas que tocan Anthropic y los destinos de salida usan **mocks** de `Proveedor_Claude` y de `fetch` para evitar llamadas reales.
 
 ### Pruebas basadas en propiedades
 
@@ -632,32 +709,50 @@ Para todo error devuelto por el Proveedor_Claude, el mensaje enviado por el Agen
 
 **Validates: Requirements 9.1**
 
-### Property 25: Envío del webhook de salida al crear o actualizar
+### Property 25: Difusión a todos los destinos exactamente una vez
 
-Para toda creación o actualización de cliente con una URL de webhook configurada, debe enviarse exactamente una solicitud HTTP cuyo cuerpo contenga la representación del cliente.
+Para toda creación o actualización de cliente y toda Lista_Destinos_Salida no vacía, debe enviarse exactamente una solicitud HTTP POST por cada destino de la lista, y el cuerpo de cada solicitud debe contener el tipo de evento y la representación serializada del cliente.
 
 **Validates: Requirements 10.1**
 
-### Property 26: Resiliencia de la operación frente al webhook
+### Property 26: Resiliencia ante fallos por destino
 
-Para toda creación o actualización de cliente, la operación de cliente debe completarse y persistirse con éxito independientemente de si la URL de webhook está ausente (se omite el envío) o de si el envío falla (se registra el fallo).
+Para toda creación o actualización de cliente y toda Lista_Destinos_Salida en la que un subconjunto arbitrario de destinos falle, el despachador debe intentar el envío a todos los destinos y nunca debe propagar una excepción, de modo que la operación de cliente se complete y persista con éxito.
 
-**Validates: Requirements 10.3, 10.4**
+**Validates: Requirements 10.4**
 
-### Property 27: Creación de cliente desde entrada de Zapier válida
+### Property 27: Omisión cuando no hay destinos configurados
+
+Para toda creación o actualización de cliente cuando la Lista_Destinos_Salida está vacía, no debe enviarse ninguna solicitud HTTP y la operación de cliente debe completarse y persistirse con éxito.
+
+**Validates: Requirements 10.3**
+
+### Property 28: Compatibilidad hacia atrás con el webhook heredado
+
+Para toda configuración en la que solo esté definido `ZAPIER_WEBHOOK_URL` (sin `OUTBOUND_WEBHOOK_URLS`), la Lista_Destinos_Salida resuelta debe contener exactamente esa única URL, y una creación o actualización de cliente debe enviarle exactamente una solicitud HTTP POST; además, la lista resuelta a partir de ambas fuentes debe estar siempre deduplicada.
+
+**Validates: Requirements 10.2**
+
+### Property 29: Creación de cliente desde entrada de Zapier válida
 
 Para toda solicitud al Endpoint_Zapier_Entrada con un token válido y nombre y correo electrónico válidos, debe crearse y persistirse un registro de Cliente con esos datos.
 
 **Validates: Requirements 11.1**
 
-### Property 28: Autorización del endpoint de entrada
+### Property 30: Autorización del endpoint de entrada
 
 Para todo token distinto del Token_Integracion configurado, la solicitud al Endpoint_Zapier_Entrada debe rechazarse con un error de autorización (401) y no debe crearse ningún Cliente.
 
 **Validates: Requirements 11.2**
 
-### Property 29: Validación del endpoint de entrada
+### Property 31: Validación del endpoint de entrada
 
 Para toda solicitud al Endpoint_Zapier_Entrada que omita el campo nombre o el campo correo electrónico, la solicitud debe rechazarse con un error de validación y no debe crearse ningún Cliente.
 
 **Validates: Requirements 11.3**
+
+### Property 32: Idempotencia de la semilla de la base de datos
+
+Para todo número de ejecuciones de la Semilla_BD mayor o igual que uno, el resultado debe ser idéntico: debe existir exactamente un Cliente_Demo con nombre "Kepa Bilbao" asociado a un Agente propietario, sin registros duplicados.
+
+**Validates: Requirements 13.1, 13.2**

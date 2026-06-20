@@ -2,7 +2,7 @@
 
 ## Visión General
 
-El plan convierte el diseño en pasos de codificación incrementales sobre **Wasp + React + Node.js + Prisma** en **TypeScript**. Cada tarea construye sobre las anteriores y termina integrándose en el sistema, sin código huérfano. Las pruebas siguen un **enfoque dual**: pruebas por ejemplo/integración y pruebas basadas en propiedades (PBT, mínimo 100 iteraciones, con **Vitest** + **fast-check**) que referencian las 29 propiedades del diseño. Las llamadas a Anthropic y Zapier se mockean en las pruebas.
+El plan convierte el diseño en pasos de codificación incrementales sobre **Wasp + React + Node.js + Prisma** en **TypeScript**. Cada tarea construye sobre las anteriores y termina integrándose en el sistema, sin código huérfano. Las pruebas siguen un **enfoque dual**: pruebas por ejemplo/integración y pruebas basadas en propiedades (PBT, mínimo 100 iteraciones, con **Vitest** + **fast-check**) que referencian las 32 propiedades del diseño. Las llamadas a Anthropic y a los destinos de salida (Zapier, Make, n8n, HTTP propio) se mockean en las pruebas.
 
 > Las sub-tareas marcadas con `*` son de pruebas y son opcionales (pueden omitirse para un MVP más rápido).
 
@@ -21,13 +21,13 @@ El plan convierte el diseño en pasos de codificación incrementales sobre **Was
     - _Requisitos: 2.1, 4.1, 7.1, 7.2_
 
   - [x] 1.3 Configurar variables de entorno y exclusión del control de versiones
-    - Crear `.env.example` con `ANTHROPIC_API_KEY`, `CLAUDE_MODEL`, `ZAPIER_WEBHOOK_URL`, `ZAPIER_INBOUND_TOKEN` vacías
+    - Crear `.env.example` con `ANTHROPIC_API_KEY`, `CLAUDE_MODEL`, `OUTBOUND_WEBHOOK_URLS`, `ZAPIER_WEBHOOK_URL`, `ZAPIER_INBOUND_TOKEN` vacías
     - Añadir `.env` a `.gitignore`
     - _Requisitos: 8.3, 8.4, 10.2, 11.4_
 
 - [x] 2. Gestor de configuración
   - [x] 2.1 Implementar `server/config.ts`
-    - Exponer lectores de `ANTHROPIC_API_KEY`, `CLAUDE_MODEL` (por defecto `claude-3-5-sonnet`), `ZAPIER_WEBHOOK_URL` y `ZAPIER_INBOUND_TOKEN` leídos en tiempo de ejecución desde `.env`
+    - Exponer lectores de `ANTHROPIC_API_KEY`, `CLAUDE_MODEL` (por defecto `claude-3-5-sonnet`), `OUTBOUND_WEBHOOK_URLS` (lista separada por comas o espacios), `ZAPIER_WEBHOOK_URL` y `ZAPIER_INBOUND_TOKEN` leídos en tiempo de ejecución desde `.env`
     - _Requisitos: 8.1, 8.2, 10.2, 11.4_
 
   - [x]* 2.2 Escribir prueba de propiedad para la selección de modelo
@@ -133,16 +133,20 @@ El plan convierte el diseño en pasos de codificación incrementales sobre **Was
 - [x] 11. Checkpoint - Asegurar que las pruebas pasan
   - Asegurar que todas las pruebas pasan; preguntar al usuario si surgen dudas.
 
-- [x] 12. Integración de salida con Zapier
-  - [x] 12.1 Implementar `server/integrations/zapierOutbound.ts` y conectarlo a las acciones de cliente
-    - `notificarCliente(client, event)`: omite si no hay URL; POST con representación del cliente; captura y registra fallos sin revertir la operación
-    - Invocar desde `createClient` y `updateClient`
-    - _Requisitos: 10.1, 10.3, 10.4_
+- [x] 12. Capa de automatización de salida multi-destino
+  - [x] 12.1 Implementar la Capa_Salida genérica y la fachada de compatibilidad, y conectarla a las acciones de cliente
+    - Implementar `server/integrations/outbound.ts`: `resolverDestinos()` (combina `config.outboundWebhookUrls()` y el `ZAPIER_WEBHOOK_URL` heredado, deduplicando) y `notificarClienteEvento(client, event)` (fan-out POST en paralelo a todos los destinos; omite si la lista está vacía; aísla y registra fallos por destino sin propagar la excepción)
+    - Añadir `config.outboundWebhookUrls()` en `server/config.ts` (lee `OUTBOUND_WEBHOOK_URLS`, separadas por comas o espacios)
+    - Conservar `server/integrations/zapierOutbound.ts` como fachada compatible hacia atrás (`notificarCliente` delega en `notificarClienteEvento`)
+    - Cablear `createClient` y `updateClient` en `server/clients/actions.ts` para invocar `notificarClienteEvento(client, 'created' | 'updated')`
+    - _Requisitos: 10.1, 10.2, 10.3, 10.4_
 
-  - [x]* 12.2 Escribir pruebas de propiedad para el webhook de salida
-    - **Property 25: Envío del webhook de salida al crear o actualizar**
-    - **Property 26: Resiliencia de la operación frente al webhook**
-    - **Validates: Requirements 10.1, 10.3, 10.4**
+  - [x]* 12.2 Escribir pruebas de propiedad para la automatización de salida
+    - **Property 25: Difusión a todos los destinos exactamente una vez**
+    - **Property 26: Resiliencia ante fallos por destino**
+    - **Property 27: Omisión cuando no hay destinos configurados**
+    - **Property 28: Compatibilidad hacia atrás con el webhook heredado**
+    - **Validates: Requirements 10.1, 10.2, 10.3, 10.4**
 
 - [x] 13. Integración de entrada con Zapier
   - [x] 13.1 Implementar `server/integrations/zapierInbound.ts` y declararlo como `api`
@@ -150,46 +154,57 @@ El plan convierte el diseño en pasos de codificación incrementales sobre **Was
     - _Requisitos: 11.1, 11.2, 11.3, 11.4_
 
   - [x]* 13.2 Escribir pruebas de propiedad para el endpoint de entrada
-    - **Property 27: Creación de cliente desde entrada de Zapier válida**
-    - **Property 28: Autorización del endpoint de entrada**
-    - **Property 29: Validación del endpoint de entrada**
+    - **Property 29: Creación de cliente desde entrada de Zapier válida**
+    - **Property 30: Autorización del endpoint de entrada**
+    - **Property 31: Validación del endpoint de entrada**
     - **Validates: Requirements 11.1, 11.2, 11.3**
 
-- [x] 14. Interfaz de usuario en español
-  - [x] 14.1 Crear el catálogo de cadenas `client/i18n/es.ts`
+- [x] 14. Semilla inicial de la base de datos
+  - [x] 14.1 Implementar `server/seeds.ts` y cablearla en `main.wasp`
+    - Implementar `seedKepaBilbao(prisma)`: garantizar un Usuario propietario (reutilizar el primero o crear uno mínimo); crear el Cliente_Demo "Kepa Bilbao" asociado al propietario; idempotencia identificando el Cliente_Demo por su correo de marcador y omitiendo la creación si ya existe
+    - Declarar `seedKepaBilbao` en `main.wasp` bajo `app.db.seeds`
+    - _Requisitos: 13.1, 13.2_
+
+  - [ ]* 14.2 Escribir prueba de propiedad para la idempotencia de la semilla
+    - **Property 32: Idempotencia de la semilla de la base de datos**
+    - **Validates: Requirements 13.1, 13.2**
+    - Nota: aún no existe una prueba dedicada de la semilla; la idempotencia de `seedKepaBilbao` está implementada pero no cubierta por una prueba propia.
+
+- [x] 15. Interfaz de usuario en español
+  - [x] 15.1 Crear el catálogo de cadenas `client/i18n/es.ts`
     - Centralizar etiquetas, botones y mensajes de estado/validación en español
     - _Requisitos: 12.1, 12.2_
 
-  - [x] 14.2 Implementar `PaginaClientes` con listado y búsqueda
+  - [x] 15.2 Implementar `PaginaClientes` con listado y búsqueda
     - Consumir `getClients`/`searchClients`; ordenar por actividad reciente; mostrar mensaje "No se encontraron resultados" cuando no haya coincidencias
     - _Requisitos: 2.6, 3.1, 3.2, 12.1_
 
-  - [x] 14.3 Implementar `FormularioCliente`
+  - [x] 15.3 Implementar `FormularioCliente`
     - Crear/editar clientes; mostrar mensajes de validación en español
     - _Requisitos: 2.1, 2.4, 12.2_
 
-  - [x] 14.4 Implementar `DetalleCliente`
+  - [x] 15.4 Implementar `DetalleCliente`
     - Mostrar campos del cliente y actividades en orden cronológico; añadir notas; disparar acciones de redactar/resumir del asistente
     - _Requisitos: 4.2, 6.1, 6.2_
 
-  - [x] 14.5 Implementar `InterfazChat` con streaming SSE
+  - [x] 15.5 Implementar `InterfazChat` con streaming SSE
     - Listar conversaciones del agente; cargar mensajes; abrir conexión SSE; aplicar reducer de acumulación incremental de tokens; mostrar mensaje de error en español ante evento `error`
     - _Requisitos: 5.3, 7.3, 7.4, 9.3, 12.1_
 
-  - [x]* 14.6 Escribir prueba de propiedad para la acumulación incremental
+  - [x]* 15.6 Escribir prueba de propiedad para la acumulación incremental
     - **Property 15: Acumulación incremental en la interfaz**
     - **Validates: Requirements 5.3**
 
-  - [x]* 14.7 Escribir pruebas por ejemplo del idioma de la UI y del manejo de errores
+  - [x]* 15.7 Escribir pruebas por ejemplo del idioma de la UI y del manejo de errores
     - Verificar que los componentes renderizan etiquetas/mensajes en español y que la `InterfazChat` muestra error en español
     - _Requisitos: 9.3, 12.1, 12.2_
 
-- [x] 15. Cableado final y checkpoint
-  - [x] 15.1 Integrar todas las operaciones, páginas y endpoints en `main.wasp`
-    - Verificar que queries, actions y endpoints `api` están declarados con sus entidades; rutas protegidas activas; smoke de configuración de `.env`
-    - _Requisitos: 1.1, 8.3, 8.4, 10.2, 11.4_
+- [x] 16. Cableado final y checkpoint
+  - [x] 16.1 Integrar todas las operaciones, páginas y endpoints en `main.wasp`
+    - Verificar que queries, actions y endpoints `api` están declarados con sus entidades; rutas protegidas activas; semilla `app.db.seeds` declarada; smoke de configuración de `.env`
+    - _Requisitos: 1.1, 8.3, 8.4, 10.2, 11.4, 13.1_
 
-- [x] 16. Checkpoint final - Asegurar que las pruebas pasan
+- [x] 17. Checkpoint final - Asegurar que las pruebas pasan
   - Asegurar que todas las pruebas pasan; preguntar al usuario si surgen dudas.
 
 ## Notas
@@ -197,7 +212,7 @@ El plan convierte el diseño en pasos de codificación incrementales sobre **Was
 - Las sub-tareas con `*` son pruebas opcionales y pueden omitirse para un MVP más rápido.
 - Cada tarea referencia requisitos específicos para trazabilidad y, cuando aplica, propiedades del diseño.
 - Las pruebas basadas en propiedades usan Vitest + fast-check (mínimo 100 iteraciones) y referencian las propiedades del diseño.
-- Las pruebas que tocan Anthropic y Zapier usan mocks de `Proveedor_Claude` y de `fetch`.
+- Las pruebas que tocan Anthropic y los destinos de salida usan mocks de `Proveedor_Claude` y de `fetch`.
 - Los checkpoints garantizan validación incremental en puntos de corte razonables.
 
 ## Task Dependency Graph
@@ -209,10 +224,10 @@ El plan convierte el diseño en pasos de codificación incrementales sobre **Was
     { "id": 1, "tasks": ["1.2", "1.3"] },
     { "id": 2, "tasks": ["2.1", "3.1", "4.1"] },
     { "id": 3, "tasks": ["2.2", "3.2", "4.2", "4.3", "7.1"] },
-    { "id": 4, "tasks": ["4.4", "4.5", "5.1", "7.2", "8.1", "9.1", "12.1"] },
-    { "id": 5, "tasks": ["5.2", "8.2", "9.2", "10.1", "12.2", "13.1", "14.1"] },
-    { "id": 6, "tasks": ["10.2", "13.2", "14.2", "14.3", "14.4", "14.5"] },
-    { "id": 7, "tasks": ["14.6", "14.7", "15.1"] }
+    { "id": 4, "tasks": ["4.4", "4.5", "5.1", "7.2", "8.1", "9.1"] },
+    { "id": 5, "tasks": ["5.2", "8.2", "9.2", "10.1", "12.1", "13.1", "14.1", "15.1"] },
+    { "id": 6, "tasks": ["10.2", "12.2", "13.2", "14.2", "15.2", "15.3", "15.4", "15.5"] },
+    { "id": 7, "tasks": ["15.6", "15.7", "16.1"] }
   ]
 }
 ```

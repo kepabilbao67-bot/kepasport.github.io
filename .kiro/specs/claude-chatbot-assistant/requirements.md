@@ -2,7 +2,7 @@
 
 ## Introducción
 
-Este producto es un CRM de clientes ("Client CRM") construido sobre Wasp (frontend React, backend Node.js mediante operaciones de Wasp y persistencia con Prisma), escrito en TypeScript. El producto permite a agentes autenticados gestionar clientes y contactos, registrar actividad por cliente, y trabajar con un asistente de IA basado en el modelo Claude de Anthropic que conversa, redacta mensajes y resume información de clientes. El producto se integra con Zapier mediante webhooks para notificar cambios de clientes (salida) y para permitir la creación de clientes desde Zapier a través de un endpoint autenticado (entrada). El asistente transmite las respuestas token a token y persiste el historial de conversación por usuario. Toda la interfaz de cara al usuario y los mensajes de error se presentan en español. El modelo de Claude, la clave de API y los secretos de Zapier se configuran mediante variables de entorno almacenadas en `.env`, excluido del control de versiones.
+Este producto es un CRM de clientes ("Client CRM") construido sobre Wasp (frontend React, backend Node.js mediante operaciones de Wasp y persistencia con Prisma), escrito en TypeScript. El producto permite a agentes autenticados gestionar clientes y contactos, registrar actividad por cliente, y trabajar con un asistente de IA basado en el modelo Claude de Anthropic que conversa, redacta mensajes y resume información de clientes. El producto se integra con automatizaciones externas mediante webhooks para notificar cambios de clientes a una lista configurable de destinos de salida (por ejemplo Zapier, Make, n8n o un endpoint HTTP propio) y para permitir la creación de clientes desde Zapier a través de un endpoint autenticado (entrada). El asistente transmite las respuestas token a token y persiste el historial de conversación por usuario. Toda la interfaz de cara al usuario y los mensajes de error se presentan en español. El modelo de Claude, la clave de API y los secretos de Zapier se configuran mediante variables de entorno almacenadas en `.env`, excluido del control de versiones.
 
 ## Glosario
 
@@ -20,9 +20,13 @@ Este producto es un CRM de clientes ("Client CRM") construido sobre Wasp (fronte
 - **Mensaje**: Entidad Prisma persistida que representa un turno de una Conversacion, con un rol (usuario o asistente) y contenido de texto.
 - **Identificador_Modelo**: El nombre configurable del modelo de Claude (valor por defecto `claude-3-5-sonnet`) leído desde una variable de entorno.
 - **Clave_API**: La credencial de la API de Anthropic almacenada en el archivo `.env` y excluida del control de versiones.
-- **Webhook_Zapier_Salida**: La URL de webhook de Zapier configurada a la que el Sistema_CRM notifica cuando se crea o actualiza un Cliente.
+- **Webhook_Zapier_Salida**: La URL de webhook de Zapier configurada a la que el Sistema_CRM notifica cuando se crea o actualiza un Cliente, conservada por compatibilidad con configuraciones anteriores.
+- **Destino_Salida**: Un sistema externo (por ejemplo Zapier, Make, n8n o un endpoint HTTP propio) identificado por una URL de webhook al que el Sistema_CRM envía notificaciones de cambios de Cliente.
+- **Lista_Destinos_Salida**: El conjunto deduplicado de URLs de Destino_Salida, compuesto por las URLs de la variable de entorno `OUTBOUND_WEBHOOK_URLS` (separadas por comas o espacios en blanco) más la URL del Webhook_Zapier_Salida heredada.
 - **Endpoint_Zapier_Entrada**: El endpoint de API autenticado mediante el cual Zapier crea registros de Cliente en el Sistema_CRM.
 - **Token_Integracion**: La clave o token secreto que autentica las solicitudes entrantes al Endpoint_Zapier_Entrada, almacenado en `.env`.
+- **Semilla_BD**: El proceso de inicialización de la base de datos que crea datos de demostración iniciales en el Sistema_CRM.
+- **Cliente_Demo**: El registro de Cliente de demostración inicial con nombre "Kepa Bilbao" que la Semilla_BD crea y asocia a un Agente propietario.
 
 ## Requisitos
 
@@ -125,16 +129,16 @@ Este producto es un CRM de clientes ("Client CRM") construido sobre Wasp (fronte
 2. SI la conexión con el Proveedor_Claude se interrumpe durante la transmisión, ENTONCES EL Backend_CRM DEBERÁ finalizar la transmisión y DEBERÁ informar la interrupción a la Interfaz_Chat.
 3. CUANDO la Interfaz_Chat recibe un indicador de error, LA Interfaz_Chat DEBERÁ mostrar un mensaje de error en español al Agente.
 
-### Requisito 10: Integración de salida con Zapier mediante webhook
+### Requisito 10: Automatización de salida hacia múltiples destinos mediante webhook
 
-**Historia de usuario:** Como agente, quiero que el sistema notifique a Zapier cuando se crea o actualiza un cliente, para activar automatizaciones externas.
+**Historia de usuario:** Como agente, quiero que el sistema notifique a una lista configurable de destinos externos cuando se crea o actualiza un cliente, para activar automatizaciones en Zapier, Make, n8n o un endpoint propio.
 
 #### Criterios de Aceptación
 
-1. CUANDO un Cliente se crea o se actualiza, EL Backend_CRM DEBERÁ enviar una solicitud HTTP con la representación del Cliente al Webhook_Zapier_Salida configurado.
-2. EL Backend_CRM DEBERÁ leer la URL del Webhook_Zapier_Salida desde el archivo `.env` en tiempo de ejecución.
-3. DONDE la URL del Webhook_Zapier_Salida no esté configurada, EL Backend_CRM DEBERÁ omitir el envío de la notificación y DEBERÁ completar la operación de Cliente.
-4. SI la solicitud al Webhook_Zapier_Salida falla, ENTONCES EL Backend_CRM DEBERÁ registrar el fallo y DEBERÁ completar la operación de Cliente.
+1. CUANDO un Cliente se crea o se actualiza, EL Backend_CRM DEBERÁ enviar a cada Destino_Salida de la Lista_Destinos_Salida una solicitud HTTP POST cuyo cuerpo contenga el tipo de evento y la representación del Cliente.
+2. EL Backend_CRM DEBERÁ construir la Lista_Destinos_Salida en tiempo de ejecución a partir de las URLs de la variable de entorno `OUTBOUND_WEBHOOK_URLS` separadas por comas o espacios en blanco más la URL del Webhook_Zapier_Salida heredada, eliminando las URLs duplicadas.
+3. DONDE la Lista_Destinos_Salida esté vacía, EL Backend_CRM DEBERÁ omitir el envío de notificaciones y DEBERÁ completar la operación de Cliente.
+4. SI la solicitud a un Destino_Salida falla, ENTONCES EL Backend_CRM DEBERÁ registrar el fallo, DEBERÁ continuar enviando la solicitud a los demás Destino_Salida de la Lista_Destinos_Salida y DEBERÁ completar la operación de Cliente.
 
 ### Requisito 11: Integración de entrada con Zapier mediante endpoint autenticado
 
@@ -155,3 +159,12 @@ Este producto es un CRM de clientes ("Client CRM") construido sobre Wasp (fronte
 
 1. LA Interfaz_Web DEBERÁ presentar las etiquetas, los botones y los mensajes de estado de cara al usuario en español.
 2. CUANDO la Interfaz_Web muestra un mensaje de validación o de error, LA Interfaz_Web DEBERÁ presentar ese mensaje en español.
+
+### Requisito 13: Semilla inicial de la base de datos
+
+**Historia de usuario:** Como operador, quiero que la base de datos se inicialice con un cliente de demostración, para disponer de datos de ejemplo al desplegar el producto sin generar duplicados en ejecuciones sucesivas.
+
+#### Criterios de Aceptación
+
+1. CUANDO se ejecuta la Semilla_BD, EL Sistema_CRM DEBERÁ crear un Cliente_Demo con nombre "Kepa Bilbao" asociado a un Agente propietario y persistirlo mediante Prisma.
+2. SI el Cliente_Demo con nombre "Kepa Bilbao" ya existe, ENTONCES LA Semilla_BD DEBERÁ omitir la creación del registro para evitar duplicados.
