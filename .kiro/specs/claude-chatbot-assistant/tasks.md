@@ -165,10 +165,9 @@ El plan convierte el diseño en pasos de codificación incrementales sobre **Was
     - Declarar `seedKepaBilbao` en `main.wasp` bajo `app.db.seeds`
     - _Requisitos: 13.1, 13.2_
 
-  - [ ]* 14.2 Escribir prueba de propiedad para la idempotencia de la semilla
+  - [x]* 14.2 Escribir prueba de propiedad para la idempotencia de la semilla
     - **Property 32: Idempotencia de la semilla de la base de datos**
     - **Validates: Requirements 13.1, 13.2**
-    - Nota: aún no existe una prueba dedicada de la semilla; la idempotencia de `seedKepaBilbao` está implementada pero no cubierta por una prueba propia.
 
 - [x] 15. Interfaz de usuario en español
   - [x] 15.1 Crear el catálogo de cadenas `client/i18n/es.ts`
