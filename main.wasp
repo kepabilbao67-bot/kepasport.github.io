@@ -1,0 +1,221 @@
+app clientCrm {
+  wasp: {
+    version: "^0.13.0"
+  },
+  title: "CRM de Clientes",
+  auth: {
+    userEntity: User,
+    methods: {
+      usernameAndPassword: {}
+    },
+    onAuthFailedRedirectTo: "/login"
+  },
+  db: {
+    seeds: [
+      import { seedKepaBilbao } from "@src/server/seeds.js"
+    ]
+  }
+}
+
+//
+// Entidades del dominio (esquema Prisma) — Tarea 1.2
+// Persistidas mediante Prisma. Los campos de autenticación
+// (username/password) los gestiona Wasp en las entidades Auth/AuthIdentity,
+// por lo que User solo declara su id y sus relaciones de dominio.
+//
+
+entity User {=psl
+  id            Int            @id @default(autoincrement())
+  clients       Client[]
+  conversations Conversation[]
+psl=}
+
+entity Client {=psl
+  id             Int        @id @default(autoincrement())
+  name           String
+  email          String
+  phone          String?
+  company        String?
+  status         String     @default("prospecto")
+  notes          String?
+  ownerId        Int
+  owner          User       @relation(fields: [ownerId], references: [id])
+  activities     Activity[]
+  lastActivityAt DateTime   @default(now())
+  createdAt      DateTime   @default(now())
+
+  @@index([ownerId])
+psl=}
+
+entity Activity {=psl
+  id        Int      @id @default(autoincrement())
+  content   String
+  clientId  Int
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([clientId])
+psl=}
+
+entity Conversation {=psl
+  id        Int       @id @default(autoincrement())
+  ownerId   Int
+  owner     User      @relation(fields: [ownerId], references: [id])
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([ownerId])
+psl=}
+
+entity Message {=psl
+  id             Int          @id @default(autoincrement())
+  role           String       // "user" | "assistant"
+  content        String
+  conversationId Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+psl=}
+
+//
+// Consultas de Cliente — Tarea 4.3
+// Aislamiento por propietario; orden por actividad reciente (Req 1.4, 2.6, 3.1).
+//
+
+query getClients {
+  fn: import { getClients } from "@src/server/clients/queries.js",
+  entities: [Client]
+}
+
+query getClient {
+  fn: import { getClient } from "@src/server/clients/queries.js",
+  entities: [Client, Activity]
+}
+
+query searchClients {
+  fn: import { searchClients } from "@src/server/clients/queries.js",
+  entities: [Client]
+}
+
+//
+// Páginas y rutas de autenticación (públicas)
+//
+
+route LoginRoute { path: "/login", to: LoginPage }
+page LoginPage {
+  component: import { LoginPage } from "@src/client/auth/LoginPage.tsx"
+}
+
+route SignupRoute { path: "/signup", to: SignupPage }
+page SignupPage {
+  component: import { SignupPage } from "@src/client/auth/SignupPage.tsx"
+}
+
+//
+// Rutas protegidas base (requieren sesión de Agente autenticada) — Requisito 1.1
+//
+
+route ClientesRoute { path: "/", to: PaginaClientes }
+page PaginaClientes {
+  authRequired: true,
+  component: import { PaginaClientes } from "@src/client/clients/PaginaClientes.tsx"
+}
+
+route ChatRoute { path: "/chat", to: PaginaChat }
+page PaginaChat {
+  authRequired: true,
+  component: import { InterfazChat } from "@src/client/chat/InterfazChat.tsx"
+}
+
+// Detalle de Cliente — Tarea 14.4 / cableado 15.1
+// Ruta protegida con parámetro `:id`; muestra los datos del Cliente y sus
+// actividades, y dispara las acciones del asistente (redactar/resumir).
+route DetalleClienteRoute { path: "/clientes/:id", to: DetalleClientePage }
+page DetalleClientePage {
+  authRequired: true,
+  component: import { DetalleCliente } from "@src/client/clients/DetalleCliente.tsx"
+}
+
+
+//
+// Operaciones de Cliente — Acciones (Tarea 4.2)
+//
+
+action createClient {
+  fn: import { createClient } from "@src/server/clients/actions.js",
+  entities: [Client]
+}
+
+action updateClient {
+  fn: import { updateClient } from "@src/server/clients/actions.js",
+  entities: [Client]
+}
+
+action deleteClient {
+  fn: import { deleteClient } from "@src/server/clients/actions.js",
+  entities: [Client, Activity]
+}
+
+//
+// Registro de actividad y notas por cliente — Tarea 5.1
+// Crea un Registro_Actividad asociado a un Cliente propio y actualiza su
+// marca de última actividad (Requisitos 4.1, 4.2, 4.3).
+//
+
+action addActivity {
+  fn: import { addActivity } from "@src/server/clients/actions.js",
+  entities: [Client, Activity]
+}
+
+
+//
+// Consultas de Chat — Tarea 9.1
+// Recuperación de conversaciones del Agente y sus mensajes, con aislamiento
+// por propietario y orden por actividad reciente / cronológico
+// (Requisitos 7.3, 7.4, 7.5).
+//
+
+query getConversations {
+  fn: import { getConversations } from "@src/server/chat/queries.js",
+  entities: [Conversation]
+}
+
+query getMessages {
+  fn: import { getMessages } from "@src/server/chat/queries.js",
+  entities: [Conversation, Message]
+}
+
+
+//
+// Endpoint SSE del asistente — Tarea 10.1
+// Transmite la respuesta de Claude token a token vía Server-Sent Events.
+// Autenticado por la sesión de Wasp (`auth: true`); accede a Conversation/Message
+// para persistir el hilo y a Client/Activity para redactar/resumir
+// (Requisitos 5.2, 5.3, 5.4, 5.5, 6.1, 6.2, 6.3, 7.1, 7.2, 9.1, 9.2).
+//
+
+api chatStream {
+  fn: import { chatStream } from "@src/server/chat/stream.js",
+  entities: [Conversation, Message, Client, Activity],
+  httpRoute: (POST, "/api/chat/stream"),
+  auth: true
+}
+
+
+
+//
+// Endpoint de entrada de Zapier — Tarea 13.1
+// Permite que Zapier cree Clientes vía REST sin sesión de Wasp (`auth: false`).
+// La autenticación se hace por token (`X-Zapier-Token` o body.token) validado
+// contra `config.zapierToken()`. Accede a Client para persistir el alta
+// (Requisitos 11.1, 11.2, 11.3, 11.4).
+//
+
+api zapierInbound {
+  fn: import { zapierInbound } from "@src/server/integrations/zapierInbound.js",
+  entities: [Client],
+  httpRoute: (POST, "/api/integrations/zapier/clients"),
+  auth: false
+}

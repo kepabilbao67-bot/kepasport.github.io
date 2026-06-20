@@ -1,0 +1,16 @@
+// =============================== IMPORTANT =================================
+// Este archivo solo se usa para el soporte del IDE. No modifiques la
+// configuración aquí; Wasp usa su propia configuración internamente.
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "strict": true,
+    "esModuleInterop": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "outDir": ".wasp/phantom"
+  }
+}

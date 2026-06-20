@@ -1,0 +1,11 @@
+/.wasp/
+node_modules/
+dist/
+*.log
+
+# Variables de entorno (secretos: no subir al control de versiones)
+.env
+.env.*
+!.env.example
+!.env.server.example
+!.env.client.example

@@ -1,0 +1,681 @@
+{
+  "pbtResults": {
+    "3.2 Escribir pruebas de propiedad para autenticación y aislamiento": {
+      "status": "passed",
+      "lastRunTimestamp": 1781907551643
+    },
+    "2.2 Escribir prueba de propiedad para la selección de modelo": {
+      "status": "passed",
+      "lastRunTimestamp": 1781907978141
+    },
+    "4.5 Escribir prueba de propiedad para la búsqueda": {
+      "status": "passed",
+      "lastRunTimestamp": 1781907677933
+    },
+    "4.4 Escribir pruebas de propiedad para CRUD de clientes": {
+      "status": "passed",
+      "lastRunTimestamp": 1781907771464
+    },
+    "5.2 Escribir pruebas de propiedad para actividad": {
+      "status": "passed",
+      "lastRunTimestamp": 1781908195401
+    },
+    "8.2 Escribir pruebas de propiedad para el contexto": {
+      "status": "passed",
+      "lastRunTimestamp": 1781908326961
+    },
+    "7.2 Escribir prueba de propiedad para la guarda de clave de API": {
+      "status": "passed",
+      "lastRunTimestamp": 1781908403123
+    },
+    "12.2 Escribir pruebas de propiedad para el webhook de salida": {
+      "status": "passed",
+      "lastRunTimestamp": 1781908769482
+    },
+    "14.6 Escribir prueba de propiedad para la acumulación incremental": {
+      "status": "passed",
+      "lastRunTimestamp": 1781909083376
+    },
+    "13.2 Escribir pruebas de propiedad para el endpoint de entrada": {
+      "status": "passed",
+      "lastRunTimestamp": 1781909269892
+    }
+  },
+  "executionHistory": {
+    "1.1 Inicializar el proyecto Wasp y declarar `app` y autenticación en `main.wasp`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906837979
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906848308
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907039525
+      }
+    ],
+    "1.2 Definir el esquema Prisma (entidades del dominio)": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906837984
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907046305
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907149591
+      }
+    ],
+    "1.3 Configurar variables de entorno y exclusión del control de versiones": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906837989
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907047226
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907150396
+      }
+    ],
+    "2.1 Implementar `server/config.ts`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906837994
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907157008
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907209918
+      }
+    ],
+    "3.1 Implementar `server/auth/ownership.ts`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906837999
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907157617
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907213039
+      }
+    ],
+    "4.1 Implementar validación de entrada de cliente": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838009
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907158038
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907213862
+      }
+    ],
+    "4.2 Implementar acciones de cliente en `server/clients/actions.ts`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838012
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907219694
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907388010
+      }
+    ],
+    "4.3 Implementar consultas de cliente en `server/clients/queries.ts`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838015
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907220439
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907389000
+      }
+    ],
+    "5.1 Implementar actividad en `server/clients/actions.ts` y `queries.ts`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838018
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908021596
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908229201
+      }
+    ],
+    "6. Checkpoint - Asegurar que las pruebas pasan": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838022
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781910487622
+      }
+    ],
+    "7.1 Implementar `server/chat/claudeProvider.ts`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838025
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907220564
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907389301
+      }
+    ],
+    "8.1 Implementar `server/chat/context.ts`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838028
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908022627
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908226216
+      }
+    ],
+    "9.1 Implementar consultas de chat en `server/chat/queries.ts`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838031
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908023708
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908228211
+      }
+    ],
+    "10.1 Implementar `server/chat/stream.ts` y declararlo como `api` en `main.wasp`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838036
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908536022
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908662730
+      }
+    ],
+    "11. Checkpoint - Asegurar que las pruebas pasan": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838040
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781910490544
+      }
+    ],
+    "12.1 Implementar `server/integrations/zapierOutbound.ts` y conectarlo a las acciones de cliente": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838043
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908512677
+      }
+    ],
+    "13.1 Implementar `server/integrations/zapierInbound.ts` y declararlo como `api`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838046
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908679801
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908785622
+      }
+    ],
+    "14.1 Crear el catálogo de cadenas `client/i18n/es.ts`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838049
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908536488
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908663313
+      }
+    ],
+    "14.2 Implementar `PaginaClientes` con listado y búsqueda": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838051
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908794632
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909141851
+      }
+    ],
+    "14.3 Implementar `FormularioCliente`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838054
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908795545
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909142741
+      }
+    ],
+    "14.4 Implementar `DetalleCliente`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838058
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908796374
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909145677
+      }
+    ],
+    "14.5 Implementar `InterfazChat` con streaming SSE": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838062
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908796956
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909146917
+      }
+    ],
+    "15.1 Integrar todas las operaciones, páginas y endpoints en `main.wasp`": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838065
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781910341906
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781910480435
+      }
+    ],
+    "16. Checkpoint final - Asegurar que las pruebas pasan": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781906838068
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781910493613
+      }
+    ],
+    "1. Andamiaje del proyecto Wasp y configuración base": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907150404
+      }
+    ],
+    "2. Gestor de configuración": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907209920
+      }
+    ],
+    "3. Capa de autenticación y aislamiento por propietario": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907213042
+      }
+    ],
+    "4. Gestión de clientes (CRUD, validación y búsqueda)": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907389003
+      }
+    ],
+    "7. Proveedor de Claude (integración con Anthropic)": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907389304
+      }
+    ],
+    "2.2 Escribir prueba de propiedad para la selección de modelo": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907436837
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908020752
+      }
+    ],
+    "3.2 Escribir pruebas de propiedad para autenticación y aislamiento": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907437836
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907836873
+      }
+    ],
+    "4.4 Escribir pruebas de propiedad para CRUD de clientes": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907440131
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907837870
+      }
+    ],
+    "4.5 Escribir prueba de propiedad para la búsqueda": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907440290
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781907838427
+      }
+    ],
+    "8. Constructor de contexto del asistente": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908226219
+      }
+    ],
+    "9. Persistencia y recuperación de conversaciones": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908228214
+      }
+    ],
+    "5. Registro de actividad y notas por cliente": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908229205
+      }
+    ],
+    "5.2 Escribir pruebas de propiedad para actividad": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908229728
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908233285
+      }
+    ],
+    "7.2 Escribir prueba de propiedad para la guarda de clave de API": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908234310
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908508704
+      }
+    ],
+    "8.2 Escribir pruebas de propiedad para el contexto": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908235309
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908509729
+      }
+    ],
+    "9.2 Escribir pruebas de propiedad para recuperación de conversaciones": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908235962
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908510759
+      }
+    ],
+    "12. Integración de salida con Zapier": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908512680
+      }
+    ],
+    "10. Endpoint SSE del asistente (`chatStream`)": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908662733
+      }
+    ],
+    "12.2 Escribir pruebas de propiedad para el webhook de salida": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908680372
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908786159
+      }
+    ],
+    "13. Integración de entrada con Zapier": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781908785627
+      }
+    ],
+    "14. Interfaz de usuario en español": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909146921
+      }
+    ],
+    "14.6 Escribir prueba de propiedad para la acumulación incremental": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909147997
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909151648
+      }
+    ],
+    "10.2 Escribir pruebas de propiedad para el flujo de chat": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909176352
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909365121
+      }
+    ],
+    "13.2 Escribir pruebas de propiedad para el endpoint de entrada": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909176911
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909366185
+      }
+    ],
+    "14.7 Escribir pruebas por ejemplo del idioma de la UI y del manejo de errores": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781909379004
+      },
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781910341285
+      }
+    ],
+    "15. Cableado final y checkpoint": [
+      {
+        "executionId": "2a3de6d5-1ef1-4e15-bf85-5f4ab31a77f1",
+        "chatSessionId": "07c39915-999a-4d96-8534-e82b3e2e721b",
+        "timestamp": 1781910480439
+      }
+    ]
+  }
+}
