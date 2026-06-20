@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { logout } from 'wasp/client/auth'
 import { getClients, searchClients, useQuery } from 'wasp/client/operations'
 import { es } from '../i18n/es'
+import { NavBar } from '../components/NavBar'
 
 /**
  * PaginaClientes (Tarea 14.2).
@@ -88,10 +88,7 @@ export function PaginaClientes() {
     <div style={styles.page}>
       <header style={styles.header}>
         <h1>{es.clients.pageTitle}</h1>
-        <nav style={styles.nav}>
-          <Link to="/chat">{es.app.nav.assistant}</Link>
-          <button onClick={() => logout()}>{es.app.nav.logout}</button>
-        </nav>
+        <NavBar active="clients" />
       </header>
 
       <div style={styles.searchBar}>

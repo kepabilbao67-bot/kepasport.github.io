@@ -17,6 +17,7 @@ export const es = {
     nav: {
       clients: 'Clientes',
       assistant: 'Asistente',
+      publications: 'Publicaciones',
       logout: 'Cerrar sesión',
     },
   },

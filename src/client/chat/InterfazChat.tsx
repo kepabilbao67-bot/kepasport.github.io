@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { logout } from 'wasp/client/auth'
 import { getConversations, getMessages, useQuery } from 'wasp/client/operations'
 import { getSessionId } from 'wasp/client/api'
 import { es } from '../i18n/es'
+import { NavBar } from '../components/NavBar'
 import {
   streamReducer,
   initialStreamState,
@@ -278,10 +277,7 @@ export function InterfazChat() {
     <div style={{ maxWidth: '960px', margin: '2rem auto', padding: '0 1rem' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>{t.pageTitle}</h1>
-        <nav style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <Link to="/">{es.app.nav.clients}</Link>
-          <button onClick={() => logout()}>{es.app.nav.logout}</button>
-        </nav>
+        <NavBar active="assistant" />
       </header>
 
       <p>{t.intro}</p>

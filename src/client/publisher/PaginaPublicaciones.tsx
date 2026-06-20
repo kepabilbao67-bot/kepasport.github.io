@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { getVideoPosts, useQuery } from 'wasp/client/operations'
 import { es } from '../i18n/es'
+import { NavBar } from '../components/NavBar'
 
 /**
  * PaginaPublicaciones (Tarea 9.3).
@@ -80,13 +81,12 @@ export function PaginaPublicaciones() {
     <div style={styles.page}>
       <header style={styles.header}>
         <h1>{es.publisher.pageTitle}</h1>
-        <nav style={styles.nav}>
-          <Link to="/clientes">{es.app.nav.clients}</Link>
-          <Link to="/chat">{es.app.nav.assistant}</Link>
+        <div style={styles.nav}>
+          <NavBar active="publications" />
           <Link to="/publicaciones/nueva" style={styles.newButton}>
             {es.publisher.newPost}
           </Link>
-        </nav>
+        </div>
       </header>
 
       {isLoading && <p style={styles.state}>{es.publisher.loading}</p>}
