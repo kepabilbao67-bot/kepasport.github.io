@@ -1,0 +1,3 @@
+# Las operaciones del backend (queries, actions, endpoints api e integraciones)
+# se implementan en tareas posteriores. Esta carpeta establece la estructura
+# `src/server` requerida por la tarea 1.1.
