@@ -292,15 +292,22 @@ con `Content-Type: application/json` a **cada** destino configurado en
 
 Copia el siguiente JSON e impórtalo en n8n con **Import from clipboard / Import
 from file**. Crea un workflow que **recibe** el webhook, **enruta** por
-plataforma con un Switch y, en cada rama, llama a un nodo **HTTP Request** de
-ejemplo (placeholder) que debes reemplazar por la API real de la red o por su
-nodo nativo. Finaliza con **Respond to Webhook** devolviendo `200`.
+plataforma con un Switch y, en cada rama, publica en la red correspondiente.
+Esta versión usa los **nodos nativos** de n8n donde existen
+(**LinkedIn**, **YouTube** y **X/Twitter**) ya configurados con los campos
+mapeados, y mantiene nodos **HTTP Request** para **Instagram** (Graph API) y
+**TikTok** (Content Posting API) con URLs de ejemplo claramente marcadas que
+debes reemplazar. Finaliza con **Respond to Webhook** devolviendo `200`.
 
 > Tras importar, abre el nodo **Webhook**, copia su **Production URL** y pégala
-> en `OUTBOUND_WEBHOOK_URLS` (sección 3). Reemplaza las URLs de ejemplo
-> (`https://EJEMPLO-REEMPLAZAR...`) de cada nodo HTTP Request por el endpoint
-> real de cada red social (o sustituye el nodo por el conector nativo de n8n y
-> conecta sus credenciales).
+> en `OUTBOUND_WEBHOOK_URLS` (sección 3). En los nodos nativos
+> (**LinkedIn**, **YouTube**, **X/Twitter**) debes **adjuntar tus credenciales**
+> (OAuth2) desde el desplegable de credenciales del nodo, porque la plantilla no
+> las incluye. En los nodos **HTTP Request** de Instagram y TikTok, reemplaza las
+> URLs de ejemplo (`https://EJEMPLO-REEMPLAZAR...`) por los endpoints reales de
+> cada API y añade su autenticación. Consulta la sección
+> [Configuración real por red (n8n)](#configuración-real-por-red-n8n) para el
+> detalle de cada red.
 
 ```json
 {
@@ -442,93 +449,96 @@ nodo nativo. Finaliza con **Respond to Webhook** devolviendo `200`.
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://EJEMPLO-REEMPLAZAR.api-de-linkedin.com/v2/ugcPosts",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ title: $json.body.content.title, description: $json.body.content.description, hashtags: $json.body.content.hashtags, videoUrl: $json.body.videoUrl }) }}",
-        "options": {}
+        "postAs": "person",
+        "text": "={{ $json.body.content.title }} {{ $json.body.content.description }} {{ $json.body.content.hashtags }}",
+        "shareMediaCategory": "NONE",
+        "additionalFields": {}
       },
       "id": "b1c2d3e4-0003-4000-8000-000000000003",
-      "name": "Publicar en LinkedIn (PLACEHOLDER)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "name": "Publicar en LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
       "position": [
         820,
         80
-      ]
+      ],
+      "notes": "Adjunta una credencial LinkedIn OAuth2. Para publicar VIDEO, usa la LinkedIn Posts API mediante un nodo HTTP Request (ver seccion 'Configuracion real por red')."
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://EJEMPLO-REEMPLAZAR.api-de-youtube.com/upload/videos",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ title: $json.body.content.title, description: $json.body.content.description, hashtags: $json.body.content.hashtags, videoUrl: $json.body.videoUrl }) }}",
-        "options": {}
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $json.body.content.title }}",
+        "regionCode": "ES",
+        "categoryId": "22",
+        "options": {
+          "description": "={{ $json.body.content.description }} {{ $json.body.content.hashtags }}"
+        }
       },
       "id": "b1c2d3e4-0004-4000-8000-000000000004",
-      "name": "Publicar en YouTube (PLACEHOLDER)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "name": "Publicar en YouTube",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
       "position": [
         820,
         240
-      ]
+      ],
+      "notes": "Adjunta una credencial Google OAuth2 (YouTube Data API v3). YouTube necesita el ARCHIVO de video (binario): antepon un nodo HTTP Request que descargue {{$json.body.videoUrl}} y pasa su binario al nodo YouTube."
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://EJEMPLO-REEMPLAZAR.api-de-instagram.com/v1/media",
+        "url": "https://graph.facebook.com/v19.0/EJEMPLO-REEMPLAZAR-IG_USER_ID/media",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ title: $json.body.content.title, description: $json.body.content.description, hashtags: $json.body.content.hashtags, videoUrl: $json.body.videoUrl }) }}",
+        "jsonBody": "={{ JSON.stringify({ media_type: 'REELS', video_url: $json.body.videoUrl, caption: $json.body.content.title + ' ' + $json.body.content.description + ' ' + $json.body.content.hashtags }) }}",
         "options": {}
       },
       "id": "b1c2d3e4-0005-4000-8000-000000000005",
-      "name": "Publicar en Instagram (PLACEHOLDER)",
+      "name": "Publicar en Instagram (HTTP - reemplazar)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         820,
         400
-      ]
+      ],
+      "notes": "Instagram Graph API: este nodo crea el contenedor de media. Reemplaza IG_USER_ID y anade el token. Necesitas un SEGUNDO nodo (POST /{IG_USER_ID}/media_publish con creation_id) para publicar. Ver seccion 'Configuracion real por red'."
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://EJEMPLO-REEMPLAZAR.api-de-x.com/2/tweets",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ title: $json.body.content.title, description: $json.body.content.description, hashtags: $json.body.content.hashtags, videoUrl: $json.body.videoUrl }) }}",
-        "options": {}
+        "resource": "tweet",
+        "operation": "create",
+        "text": "={{ ($json.body.content.title + ' ' + $json.body.content.description + ' ' + $json.body.content.hashtags).slice(0, 280) }}",
+        "additionalFields": {}
       },
       "id": "b1c2d3e4-0006-4000-8000-000000000006",
-      "name": "Publicar en X (PLACEHOLDER)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "name": "Publicar en X",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
       "position": [
         820,
         560
-      ]
+      ],
+      "notes": "Adjunta una credencial X/Twitter OAuth2. El texto se recorta a ~280 caracteres. Para adjuntar VIDEO necesitas subir el media con la X API v2 (pasos extra)."
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://EJEMPLO-REEMPLAZAR.api-de-tiktok.com/v2/post/publish",
+        "url": "https://open.tiktokapis.com/v2/post/publish/video/init/",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ title: $json.body.content.title, description: $json.body.content.description, hashtags: $json.body.content.hashtags, videoUrl: $json.body.videoUrl }) }}",
+        "jsonBody": "={{ JSON.stringify({ post_info: { title: $json.body.content.title + ' ' + $json.body.content.description + ' ' + $json.body.content.hashtags }, source_info: { source: 'PULL_FROM_URL', video_url: $json.body.videoUrl } }) }}",
         "options": {}
       },
       "id": "b1c2d3e4-0007-4000-8000-000000000007",
-      "name": "Publicar en TikTok (PLACEHOLDER)",
+      "name": "Publicar en TikTok (HTTP - reemplazar)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         820,
         720
-      ]
+      ],
+      "notes": "TikTok Content Posting API: requiere app en TikTok for Developers + OAuth (token Bearer). Verifica el dominio de video_url (domain verification) o sube el archivo en lugar de PULL_FROM_URL. Ver seccion 'Configuracion real por red'."
     },
     {
       "parameters": {
@@ -563,42 +573,42 @@ nodo nativo. Finaliza con **Respond to Webhook** devolviendo `200`.
       "main": [
         [
           {
-            "node": "Publicar en LinkedIn (PLACEHOLDER)",
+            "node": "Publicar en LinkedIn",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Publicar en YouTube (PLACEHOLDER)",
+            "node": "Publicar en YouTube",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Publicar en Instagram (PLACEHOLDER)",
+            "node": "Publicar en Instagram (HTTP - reemplazar)",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Publicar en X (PLACEHOLDER)",
+            "node": "Publicar en X",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Publicar en TikTok (PLACEHOLDER)",
+            "node": "Publicar en TikTok (HTTP - reemplazar)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Publicar en LinkedIn (PLACEHOLDER)": {
+    "Publicar en LinkedIn": {
       "main": [
         [
           {
@@ -609,7 +619,7 @@ nodo nativo. Finaliza con **Respond to Webhook** devolviendo `200`.
         ]
       ]
     },
-    "Publicar en YouTube (PLACEHOLDER)": {
+    "Publicar en YouTube": {
       "main": [
         [
           {
@@ -620,7 +630,7 @@ nodo nativo. Finaliza con **Respond to Webhook** devolviendo `200`.
         ]
       ]
     },
-    "Publicar en Instagram (PLACEHOLDER)": {
+    "Publicar en Instagram (HTTP - reemplazar)": {
       "main": [
         [
           {
@@ -631,7 +641,7 @@ nodo nativo. Finaliza con **Respond to Webhook** devolviendo `200`.
         ]
       ]
     },
-    "Publicar en X (PLACEHOLDER)": {
+    "Publicar en X": {
       "main": [
         [
           {
@@ -642,7 +652,7 @@ nodo nativo. Finaliza con **Respond to Webhook** devolviendo `200`.
         ]
       ]
     },
-    "Publicar en TikTok (PLACEHOLDER)": {
+    "Publicar en TikTok (HTTP - reemplazar)": {
       "main": [
         [
           {
@@ -661,10 +671,172 @@ nodo nativo. Finaliza con **Respond to Webhook** devolviendo `200`.
 ```
 
 > Al importar, si tu instancia usa versiones distintas de los nodos (Webhook,
-> Switch o HTTP Request), n8n puede pedirte **actualizar el nodo**: acepta y
-> revisa que el Switch siga enrutando por `={{ $json.body.platform }}` y que el
-> nodo Webhook conserve `responseMode: responseNode` para que funcione el
-> "Respond to Webhook".
+> Switch, HTTP Request o los nativos de LinkedIn/YouTube/X), n8n puede pedirte
+> **actualizar el nodo** y **adjuntar credenciales**: acepta, conecta tus
+> credenciales OAuth2 en cada nodo nativo y revisa que el Switch siga enrutando
+> por `={{ $json.body.platform }}` y que el nodo Webhook conserve
+> `responseMode: responseNode` para que funcione el "Respond to Webhook". Los
+> parámetros exactos y `typeVersion` de cada nodo **varían según la versión de
+> n8n**, por lo que algunos campos pueden mostrarse con otro nombre tras la
+> actualización.
+
+---
+
+## Configuración real por red (n8n)
+
+Esta sección detalla, **para cada una de las 5 plataformas automatizadas**, cómo
+configurar de verdad el nodo de publicación en n8n: qué nodo usar, cómo conectar
+la cuenta, qué campos del webhook mapear y qué limitaciones tener en cuenta.
+
+Recuerda los campos disponibles en el payload (sección "Qué envía la app"):
+
+- Título: `{{$json.body.content.title}}`
+- Descripción: `{{$json.body.content.description}}`
+- Hashtags: `{{$json.body.content.hashtags}}`
+- URL del vídeo: `{{$json.body.videoUrl}}`
+
+> Según tu versión de n8n y la opción de respuesta del Webhook, el cuerpo puede
+> estar bajo `{{$json.body.*}}` o directamente bajo `{{$json.*}}`. Verifícalo en
+> la pestaña de datos del nodo Webhook tras la primera ejecución y ajusta las
+> expresiones.
+
+### LinkedIn
+
+- **(a) Nodo:** nodo **nativo** `n8n-nodes-base.linkedIn` ("LinkedIn"). Para
+  publicar **vídeo** el nodo nativo se queda corto (soporta sobre todo texto y
+  artículos), así que para vídeo se documenta más abajo una alternativa con
+  **HTTP Request** a la LinkedIn Posts API.
+- **(b) Conectar la cuenta:** crea una credencial **LinkedIn OAuth2** en n8n.
+  1. Entra en el **LinkedIn Developer Portal** y crea una **app** asociada a una
+     página de empresa.
+  2. Solicita los productos/permisos de publicación (p. ej. *Share on LinkedIn*
+     / *Sign In with LinkedIn*; para organizaciones, *Community Management* /
+     *Marketing*).
+  3. Copia el **Client ID** y **Client Secret** en la credencial de n8n y añade
+     la **Redirect URL** que te indica n8n a la app de LinkedIn.
+  4. Pulsa **Connect** en n8n para completar el flujo OAuth2.
+- **(c) Mapeo de campos (post de texto):**
+  - `text` →
+    `={{ $json.body.content.title }} {{ $json.body.content.description }} {{ $json.body.content.hashtags }}`
+  - `postAs`: `person` (perfil) u `organization` (página de empresa).
+  - `shareMediaCategory`: `NONE` para texto.
+- **(d) Caveats:** el nodo nativo publica bien texto/enlaces, pero la subida de
+  **vídeo nativo** no está garantizada. Para vídeo usa un **HTTP Request** a la
+  **Posts API** (`POST https://api.linkedin.com/rest/posts`), lo que normalmente
+  requiere: (1) registrar la subida (*initializeUpload*), (2) subir el binario
+  del vídeo (descárgalo antes con un nodo HTTP Request desde
+  `{{$json.body.videoUrl}}`), y (3) crear el post referenciando el `video`
+  obtenido. Añade la cabecera `LinkedIn-Version` y el `Authorization: Bearer`.
+
+### YouTube
+
+- **(a) Nodo:** nodo **nativo** `n8n-nodes-base.youTube` ("YouTube"), recurso
+  **Video**, operación **Upload**.
+- **(b) Conectar la cuenta:** credencial **Google OAuth2** en n8n.
+  1. Crea un **proyecto en Google Cloud** y habilita la **YouTube Data API v3**.
+  2. Configura la **pantalla de consentimiento OAuth** y crea credenciales de
+     tipo **OAuth client ID** (aplicación web).
+  3. Añade la **Redirect URL** de n8n a la lista de URIs autorizadas.
+  4. Copia **Client ID** y **Client Secret** en la credencial de n8n y pulsa
+     **Connect** para autorizar el canal.
+- **(c) Mapeo de campos:**
+  - `title` → `={{ $json.body.content.title }}`
+  - `description` (en *Options*) →
+    `={{ $json.body.content.description }} {{ $json.body.content.hashtags }}`
+  - El **archivo de vídeo** se pasa como **binario**, no como URL.
+- **(d) Caveats:** YouTube necesita el **fichero real** del vídeo, no una URL.
+  Antepón un nodo **HTTP Request** (método `GET`, *Response Format: File*) que
+  descargue `{{$json.body.videoUrl}}` y entrega su **binario** al nodo YouTube
+  (campo *Binary Property*). Ten en cuenta cuotas de la API y que las subidas
+  pueden tardar.
+
+### Instagram
+
+- **(a) Nodo:** **no** hay nodo de publicación nativo de primera clase; se usa
+  un nodo **HTTP Request** contra la **Instagram Graph API** (parte de la
+  **Facebook Graph API**).
+- **(b) Conectar la cuenta:** necesitas una **cuenta de Instagram Business**
+  vinculada a una **Página de Facebook**, una **app de Meta** (Meta for
+  Developers) con los permisos `instagram_basic`,
+  `instagram_content_publish` y `pages_read_engagement`, y un **token de acceso
+  de larga duración**. En n8n guarda ese token como credencial **Header Auth**
+  (`Authorization: Bearer <token>`) o pásalo como parámetro `access_token`.
+- **(c) Mapeo de campos (flujo de 2 pasos):**
+  1. **Crear contenedor de media:**
+     `POST https://graph.facebook.com/v19.0/{IG_USER_ID}/media`
+     con `media_type=REELS`, `video_url={{$json.body.videoUrl}}` y
+     `caption={{$json.body.content.title}} {{$json.body.content.description}} {{$json.body.content.hashtags}}`.
+     Devuelve un `id` (el `creation_id`).
+  2. **Publicar el contenedor:**
+     `POST https://graph.facebook.com/v19.0/{IG_USER_ID}/media_publish`
+     con `creation_id={{ $json.id }}` (el id del paso anterior).
+- **(d) Caveats:** la creación del Reel es **asíncrona**; conviene consultar el
+  campo `status_code` del contenedor hasta que sea `FINISHED` antes de publicar.
+  Sustituye `{IG_USER_ID}` por el ID de tu cuenta de Instagram Business. El vídeo
+  debe estar accesible públicamente en `video_url`.
+
+### X / Twitter
+
+- **(a) Nodo:** nodo **nativo** `n8n-nodes-base.twitter` ("X (Formerly
+  Twitter)"), recurso **Tweet**, operación **Create**.
+- **(b) Conectar la cuenta:** credencial **Twitter/X OAuth2** en n8n.
+  1. Crea un **Project + App** en el **X Developer Portal** con acceso a la
+     **API v2**.
+  2. Habilita **OAuth 2.0**, configura permisos de **lectura y escritura** y la
+     **Callback URL** de n8n.
+  3. Copia **Client ID** y **Client Secret** en la credencial de n8n y pulsa
+     **Connect**.
+- **(c) Mapeo de campos:**
+  - `text` →
+    `={{ ($json.body.content.title + ' ' + $json.body.content.description + ' ' + $json.body.content.hashtags).slice(0, 280) }}`
+    (respeta el límite de ~280 caracteres).
+- **(d) Caveats:** publicar **vídeo** requiere subir el media primero
+  (endpoint de *media upload* de la X API) y adjuntar el `media_id` al tweet, lo
+  que puede necesitar pasos extra y un nivel de acceso de API adecuado. El plan
+  gratuito de la API de X tiene límites estrictos de publicación.
+
+### TikTok
+
+- **(a) Nodo:** **no** existe nodo nativo; usa un nodo **HTTP Request** contra
+  la **TikTok Content Posting API**.
+- **(b) Conectar la cuenta:** crea una **app en TikTok for Developers**, solicita
+  el scope `video.publish` (Content Posting API) y completa el flujo **OAuth**
+  para obtener un **access token**. En n8n guárdalo como credencial
+  **Header Auth** (`Authorization: Bearer <token>`).
+- **(c) Mapeo de campos (flujo de subida/publicación):**
+  1. **Iniciar la publicación:**
+     `POST https://open.tiktokapis.com/v2/post/publish/video/init/`
+     con `post_info.title` =
+     `{{$json.body.content.title}} {{$json.body.content.description}} {{$json.body.content.hashtags}}`
+     y `source_info` con `source=PULL_FROM_URL` y
+     `video_url={{$json.body.videoUrl}}` (o `FILE_UPLOAD` si subes el binario).
+  2. Si usas `FILE_UPLOAD`, sube el binario a la `upload_url` devuelta y luego
+     consulta el estado con
+     `POST https://open.tiktokapis.com/v2/post/publish/status/fetch/`.
+- **(d) Caveats:** para usar `PULL_FROM_URL` debes **verificar el dominio** de la
+  URL del vídeo en el portal de desarrolladores. Las apps no auditadas publican
+  en modo restringido (privado/solo para revisión). Respeta los formatos y
+  límites de tamaño/duración de TikTok.
+
+---
+
+## Checklist de puesta en marcha
+
+Antes de activar el workflow, prepara por cada red la cuenta de desarrollador / app
+y la credencial correspondiente en n8n:
+
+| Red | Cuenta / app de desarrollador necesaria | Credencial a crear en n8n |
+|-----|------------------------------------------|---------------------------|
+| **LinkedIn** | App en LinkedIn Developer Portal con permisos de publicación (Share/Marketing) | **LinkedIn OAuth2** (nodo nativo). Para vídeo: token + HTTP Request a la Posts API |
+| **YouTube** | Proyecto en Google Cloud con **YouTube Data API v3** habilitada y OAuth client ID | **Google OAuth2** (nodo nativo YouTube) |
+| **Instagram** | Cuenta **Instagram Business** + Página de Facebook, app de **Meta** con `instagram_content_publish`, token de larga duración | **Header Auth** con `Authorization: Bearer <token>` (HTTP Request, Graph API) |
+| **X / Twitter** | Project + App en X Developer Portal (API v2, OAuth 2.0, lectura/escritura) | **Twitter/X OAuth2** (nodo nativo) |
+| **TikTok** | App en **TikTok for Developers** con scope `video.publish` (Content Posting API) | **Header Auth** con `Authorization: Bearer <token>` (HTTP Request) |
+
+> Recuerda: en todos los casos debes **adjuntar la credencial al nodo** dentro de
+> n8n. La plantilla importable no incluye credenciales por seguridad, así que tras
+> importar verás los nodos sin conectar hasta que selecciones (o crees) la
+> credencial correspondiente.
 
 ---
 
