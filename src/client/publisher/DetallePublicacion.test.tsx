@@ -31,6 +31,10 @@ vi.mock('wasp/client/operations', () => ({
   useQuery: (...args: unknown[]) => useQueryMock(...args),
 }))
 
+vi.mock('wasp/client/api', () => ({
+  getSessionId: () => 'test-session',
+}))
+
 vi.mock('react-router-dom', () => ({
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
     <a href={typeof to === 'string' ? to : '#'}>{children}</a>
