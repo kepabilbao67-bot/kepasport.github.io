@@ -20,7 +20,7 @@
 //   - action generatePlatformContent → genera/regenera el contenido (Tarea 6.3).
 //   - action publishPlatformContent  → publica en destinos de salida (Tarea 6.5).
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useReducer, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   getVideoPost,
@@ -28,7 +28,13 @@ import {
   publishPlatformContent,
   useQuery,
 } from 'wasp/client/operations'
+import { getSessionId } from 'wasp/client/api'
 import { es } from '../i18n/es'
+import {
+  streamReducer,
+  initialStreamState,
+  parseSseFrame,
+} from '../chat/streamReducer'
 
 /**
  * Estructura mínima de un Contenido_Plataforma tal como lo devuelve
@@ -102,6 +108,300 @@ const cardStyle: React.CSSProperties = {
   borderRadius: '8px',
   padding: '1rem',
   marginBottom: '1rem',
+}
+
+// ---------------------------------------------------------------------------
+// AsistenteAutomatizacion — panel colapsable integrado en DetallePublicacion
+//
+// Permite al usuario hacer preguntas sobre automatización (n8n, Make, Zapier,
+// APIs de redes sociales) en el contexto de la publicación que está viendo.
+// Se comunica con el endpoint POST /api/automation/ask mediante SSE.
+// ---------------------------------------------------------------------------
+
+type AsistenteProps = {
+  post: VideoPostWithContents
+}
+
+type Mensaje = {
+  id: number
+  role: 'user' | 'assistant' | 'info'
+  content: string
+}
+
+function AsistenteAutomatizacion({ post }: AsistenteProps) {
+  const t = es.automationAssistant
+  const [abierto, setAbierto] = useState(false)
+  const [mensajes, setMensajes] = useState<Mensaje[]>([])
+  const [streaming, setStreaming] = useState(false)
+  const [streamState, dispatch] = useReducer(streamReducer, initialStreamState)
+  const streamTextRef = useRef('')
+  const abortRef = useRef<AbortController | null>(null)
+
+  // Pre-fill con la primera plataforma disponible.
+  const primeraPlataforma = post.contents[0]?.platform ?? ''
+  const sugerencia = primeraPlataforma
+    ? `¿Cómo configuro n8n para publicar en ${platformLabels[primeraPlataforma] ?? primeraPlataforma}?`
+    : t.placeholder
+  const [pregunta, setPregunta] = useState(sugerencia)
+
+  const abrirPanel = useCallback(() => {
+    setAbierto(true)
+    // Mostrar la línea de contexto la primera vez que se abre.
+    if (mensajes.length === 0) {
+      setMensajes([{ id: Date.now(), role: 'info', content: t.contextLabel }])
+    }
+  }, [mensajes.length, t.contextLabel])
+
+  const cerrarPanel = useCallback(() => {
+    setAbierto(false)
+    abortRef.current?.abort()
+  }, [])
+
+  const enviar = useCallback(async () => {
+    const texto = pregunta.trim()
+    if (!texto || streaming) {
+      if (!texto) {
+        setMensajes((prev) => [
+          ...prev,
+          { id: Date.now(), role: 'info', content: t.errorEmpty },
+        ])
+      }
+      return
+    }
+
+    const postContext = {
+      videoUrl: post.videoUrl,
+      brief: post.brief,
+      platform: post.contents[0]?.platform,
+      status: post.contents[0]?.status,
+    }
+
+    // Mensaje del usuario de forma optimista.
+    const idUsuario = Date.now()
+    setMensajes((prev) => [
+      ...prev,
+      { id: idUsuario, role: 'user', content: texto },
+    ])
+    setPregunta('')
+    dispatch({ type: 'reset' })
+    streamTextRef.current = ''
+
+    const controller = new AbortController()
+    abortRef.current = controller
+    setStreaming(true)
+
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      const sessionId = getSessionId()
+      if (sessionId) headers['Authorization'] = `Bearer ${sessionId}`
+
+      const response = await fetch('/api/automation/ask', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ question: texto, postContext }),
+        signal: controller.signal,
+      })
+
+      if (!response.ok || !response.body) {
+        setMensajes((prev) => [
+          ...prev,
+          { id: Date.now(), role: 'info', content: t.errorApi },
+        ])
+        return
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+
+        let sep: number
+        while ((sep = buffer.indexOf('\n\n')) !== -1) {
+          const frame = buffer.slice(0, sep)
+          buffer = buffer.slice(sep + 2)
+          const event = parseSseFrame(frame)
+          if (!event) continue
+
+          if (event.type === 'token') {
+            streamTextRef.current += event.data
+            dispatch({ type: 'append', chunk: event.data })
+          } else if (event.type === 'done') {
+            setMensajes((prev) => [
+              ...prev,
+              {
+                id: Date.now(),
+                role: 'assistant',
+                content: streamTextRef.current,
+              },
+            ])
+            dispatch({ type: 'reset' })
+            streamTextRef.current = ''
+          } else if (event.type === 'error') {
+            setMensajes((prev) => [
+              ...prev,
+              {
+                id: Date.now(),
+                role: 'info',
+                content: event.data.message || t.errorApi,
+              },
+            ])
+            dispatch({ type: 'reset' })
+            streamTextRef.current = ''
+          }
+        }
+      }
+
+      // Trama residual.
+      const tail = buffer.trim()
+      if (tail) {
+        const event = parseSseFrame(tail)
+        if (event?.type === 'token') {
+          streamTextRef.current += event.data
+          dispatch({ type: 'append', chunk: event.data })
+        }
+      }
+    } catch (err) {
+      if ((err as { name?: string })?.name !== 'AbortError') {
+        setMensajes((prev) => [
+          ...prev,
+          { id: Date.now(), role: 'info', content: t.errorApi },
+        ])
+      }
+      dispatch({ type: 'reset' })
+      streamTextRef.current = ''
+    } finally {
+      abortRef.current = null
+      setStreaming(false)
+    }
+  }, [pregunta, streaming, post, t])
+
+  return (
+    <div
+      style={{
+        borderTop: '2px solid #dee2e6',
+        marginTop: '2rem',
+        paddingTop: '1.5rem',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '0 0 8px 8px',
+        padding: '1.5rem 1rem',
+      }}
+    >
+      {/* Botón de apertura / cierre */}
+      <button
+        type="button"
+        onClick={abierto ? cerrarPanel : abrirPanel}
+        style={{ marginBottom: abierto ? '1rem' : 0 }}
+      >
+        {abierto ? t.buttonClose : t.buttonOpen}
+      </button>
+
+      {abierto && (
+        <div>
+          <h2 style={{ fontSize: '1.1rem', margin: '0 0 1rem' }}>{t.title}</h2>
+
+          {/* Lista de mensajes */}
+          <div
+            role="log"
+            aria-live="polite"
+            style={{
+              minHeight: '120px',
+              maxHeight: '320px',
+              overflowY: 'auto',
+              marginBottom: '0.75rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+            }}
+          >
+            {mensajes.map((m) => {
+              if (m.role === 'info') {
+                return (
+                  <p
+                    key={m.id}
+                    style={{
+                      margin: 0,
+                      color: '#6c757d',
+                      fontSize: '0.875rem',
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    {m.content}
+                  </p>
+                )
+              }
+              return (
+                <div
+                  key={m.id}
+                  style={{ textAlign: m.role === 'user' ? 'right' : 'left' }}
+                >
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '0.4rem 0.7rem',
+                      borderRadius: '0.5rem',
+                      background: m.role === 'user' ? '#e3f2fd' : '#ffffff',
+                      border: '1px solid #dee2e6',
+                      whiteSpace: 'pre-wrap',
+                      maxWidth: '80%',
+                    }}
+                  >
+                    {m.content}
+                  </span>
+                </div>
+              )
+            })}
+
+            {/* Respuesta acumulándose en tiempo real */}
+            {streaming && (
+              <div style={{ textAlign: 'left' }}>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    padding: '0.4rem 0.7rem',
+                    borderRadius: '0.5rem',
+                    background: '#ffffff',
+                    border: '1px solid #dee2e6',
+                    whiteSpace: 'pre-wrap',
+                    maxWidth: '80%',
+                  }}
+                >
+                  {streamState.text || t.thinking}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Composer */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void enviar()
+            }}
+            style={{ display: 'flex', gap: '0.5rem' }}
+          >
+            <input
+              type="text"
+              value={pregunta}
+              onChange={(e) => setPregunta(e.target.value)}
+              placeholder={t.placeholder}
+              disabled={streaming}
+              style={{ flex: 1, padding: '0.5rem' }}
+            />
+            <button type="submit" disabled={streaming || !pregunta.trim()}>
+              {t.send}
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function DetallePublicacion() {
@@ -361,6 +661,9 @@ export function DetallePublicacion() {
           })
         )}
       </section>
+
+      {/* Panel del asistente de automatización (colapsable, al pie de la página). */}
+      <AsistenteAutomatizacion post={post} />
     </div>
   )
 }

@@ -311,3 +311,16 @@ page DetallePublicacionPage {
   authRequired: true,
   component: import { DetallePublicacion } from "@src/client/publisher/DetallePublicacion.tsx"
 }
+
+//
+// Endpoint SSE del asistente de automatización — integrado en DetallePublicacion
+// Responde preguntas sobre n8n/Make/Zapier/APIs con streaming token a token.
+// Autenticado por sesión de Wasp (`auth: true`).
+//
+
+api automationAssistantStream {
+  fn: import { automationAssistantStream } from "@src/server/automation/assistantStream.js",
+  entities: [],
+  httpRoute: (POST, "/api/automation/ask"),
+  auth: true
+}

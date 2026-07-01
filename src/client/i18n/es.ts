@@ -146,6 +146,22 @@ export const es = {
     },
   },
 
+  /**
+   * Asistente de automatización integrado en DetallePublicacion.
+   * Ayuda al usuario con n8n, Make, Zapier y APIs de redes sociales.
+   */
+  automationAssistant: {
+    buttonOpen: '🤖 Preguntar al asistente',
+    buttonClose: 'Cerrar asistente',
+    title: 'Asistente de automatización',
+    placeholder: 'Ej: ¿Cómo publico en LinkedIn con n8n?',
+    send: 'Enviar',
+    thinking: 'Pensando…',
+    contextLabel: 'Contexto de esta publicación cargado automáticamente.',
+    errorEmpty: 'Escribe una pregunta antes de enviar.',
+    errorApi: 'El asistente no pudo responder. Inténtalo de nuevo.',
+  },
+
   /** Mensajes de error mostrados al usuario, todos en español (Requisito 12.2). */
   errors: {
     // Validación de mensaje vacío en el asistente (Requisito 5.5).
